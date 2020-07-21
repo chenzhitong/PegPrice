@@ -9,17 +9,19 @@ namespace cmc
 {
     class Program
     {
-        static readonly string API_KEY = "";
+        static string API_KEY;
         static void Main(string[] args)
         {
+            API_KEY = File.ReadAllText("config.txt");
             while (true)
             {
                 try
                 {
-                    var usdtPrice = CoinMarketCapAPICall();
-                    Console.WriteLine(usdtPrice);
-                    File.WriteAllText("price.txt", usdtPrice);
-
+                    var usdt_btc = CoinMarketCapAPICall("USDT", "BTC");
+                    var usdt_usd = CoinMarketCapAPICall("USDT", "USD");
+                    var json = new JObject { { "USDT-BTC", usdt_btc }, { "USDT-USD", usdt_usd } };
+                    Console.WriteLine(json);
+                    File.WriteAllText("price.txt", json.ToString());
                 }
                 catch (WebException e)
                 {
@@ -29,13 +31,13 @@ namespace cmc
             }
         }
 
-        static string CoinMarketCapAPICall()
+        static string CoinMarketCapAPICall(string token, string convert)
         {
             var URL = new UriBuilder("https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest");
 
             var queryString = HttpUtility.ParseQueryString(string.Empty);
-            queryString["symbol"] = "USDT";
-            queryString["convert"] = "BTC";
+            queryString["symbol"] = token;
+            queryString["convert"] = convert;
 
             URL.Query = queryString.ToString();
 
@@ -46,7 +48,7 @@ namespace cmc
             var result = client.DownloadString(URL.ToString());
 
             var USDT_BTC = JObject.Parse(result);
-            var price = USDT_BTC["data"]["USDT"]["quote"]["BTC"]["price"].ToString();
+            var price = USDT_BTC["data"][token]["quote"][convert]["price"].ToString();
 
             return price;
         }

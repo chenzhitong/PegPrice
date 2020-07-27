@@ -19,7 +19,7 @@ namespace cmc
                 {
                     var usdt_btc = CoinMarketCapAPICall("USDT", "BTC");
                     var usdt_usd = CoinMarketCapAPICall("USDT", "USD");
-                    var json = new JObject { { "USDT-BTC", usdt_btc }, { "USDT-USD", usdt_usd } };
+                    var json = new JObject { { "USDT-BTC", usdt_btc }, { "USDT-USD", usdt_usd }, { "DateTime", DateTime.Now.ToString() } };
                     Console.WriteLine(json);
                     File.WriteAllText("price.txt", json.ToString());
                 }

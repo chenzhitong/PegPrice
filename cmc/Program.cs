@@ -10,9 +10,15 @@ namespace cmc
     class Program
     {
         static string API_KEY;
+        static string NeoURL;
+        static string EthURL;
         static void Main(string[] args)
         {
-            API_KEY = File.ReadAllText("config.txt");
+            var config = JObject.Parse(File.ReadAllText("config.json"));
+            API_KEY = config["key"].ToString();
+            NeoURL = config["NeoURL"].ToString();
+            EthURL = config["EthURL"].ToString();
+
             while (true)
             {
                 try
@@ -24,6 +30,16 @@ namespace cmc
                     File.WriteAllText("price.txt", json.ToString());
                 }
                 catch (WebException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                try
+                {
+                    var json = new JObject { { "USDT", GetUsdtBalance() }, { "PEG", GetPegBalance() }, { "DateTime", DateTime.Now.ToString() } };
+                    Console.WriteLine(json);
+                    File.WriteAllText("wallet.txt", json.ToString());
+                }
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
@@ -51,6 +67,18 @@ namespace cmc
             var price = USDT_BTC["data"][token]["quote"][convert]["price"].ToString();
 
             return price;
+        }
+
+        static string GetPegBalance()
+        {
+            var response = new WebClient().DownloadString($"{NeoURL}?jsonrpc=2.0&method=getbalance&params=['075383de6638e042efc4bd3daca4ceb516ec1c6b']&id=1");
+            return JObject.Parse(response)["result"]["balance"].ToString();
+        }
+
+        static string GetUsdtBalance()
+        {
+            var response = new WebClient().DownloadString($"{EthURL}/Eth/BalanceOfWallet");
+            return JObject.Parse(response)["data"].ToString();
         }
     }
 }

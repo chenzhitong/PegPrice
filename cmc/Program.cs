@@ -84,7 +84,7 @@ namespace cmc
             {
                 var url = JObject.Parse(File.ReadAllText("config.json"))["NeoURL"].ToString();
                 var response = PostWebRequest($"{url}", "{\"jsonrpc\": \"2.0\",\"method\": \"getPegBalance\",\"params\": [],\"id\": 1}");
-                return JObject.Parse(response)["result"]["balance"].ToString();
+                return JObject.Parse(response)["result"]["data"]["balance"].ToString();
             }
             catch (Exception e)
             {

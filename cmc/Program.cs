@@ -83,7 +83,7 @@ namespace cmc
             try
             {
                 var url = JObject.Parse(File.ReadAllText("config.json"))["NeoURL"].ToString();
-                var response = PostWebRequest($"{url}", "{\"jsonrpc\": \"2.0\",\"method\": \"getPegBalance\",\"params\": [],\"id\": 1}");
+                var response = PostWebRequest2($"{url}", "{\"jsonrpc\": \"2.0\",\"method\": \"getPegBalance\",\"params\": [],\"id\": 1}");
                 return JObject.Parse(response)["result"]["data"]["balance"].ToString();
             }
             catch (Exception e)
@@ -116,6 +116,23 @@ namespace cmc
                 var request = WebRequest.Create(postUrl);
                 request.Method = "POST";
                 request.ContentType = "application/json";
+                request.GetRequestStream().Write(byteArray, 0, byteArray.Length);
+                using var response = request.GetResponse();
+                using var sr = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+                return sr.ReadToEnd();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public static string PostWebRequest2(string postUrl, string paramData)
+        {
+            try
+            {
+                var byteArray = Encoding.UTF8.GetBytes(paramData);
+                var request = WebRequest.Create(postUrl);
+                request.Method = "POST";
                 request.GetRequestStream().Write(byteArray, 0, byteArray.Length);
                 using var response = request.GetResponse();
                 using var sr = new StreamReader(response.GetResponseStream(), Encoding.UTF8);

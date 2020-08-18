@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Mail;
 using System.Text;
 using System.Timers;
 using System.Web;
@@ -21,6 +22,11 @@ namespace cmc
             t2.Elapsed += GetBalance;
             t2.Start();
             GetBalance(null, null);
+
+            var t3 = new Timer(new TimeSpan(24, 0, 0).TotalMilliseconds);
+            t3.Elapsed += SendEmail;
+            t3.Start();
+            SendEmail(null, null);
 
             Console.ReadLine();
         }
@@ -53,6 +59,57 @@ namespace cmc
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+            }
+        }
+
+        private static void SendEmail(object sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                var usdt = Convert.ToDecimal(GetUsdtBalance());
+                var peg = Convert.ToDecimal(GetPegBalance());
+                if (usdt < 20000)
+                {
+                    foreach (var item in JObject.Parse(File.ReadAllText("config.json"))["Email"]["To"])
+                    {
+                        Email($"USDT 余额 {usdt}", item.ToString());
+                    }
+                }
+                if (peg < 20000)
+                {
+                    foreach (var item in JObject.Parse(File.ReadAllText("config.json"))["Email"]["To"])
+                    {
+                        Email($"PEG 余额 {peg}", item.ToString());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private static void Email(string message, string to)
+        {
+            var config = JObject.Parse(File.ReadAllText("config.json"))["Email"];
+            using (MailMessage mail = new MailMessage
+            {
+                From = new MailAddress(config["FromAddress"].ToString(), config["FromDisplayName"].ToString()),
+                Subject = "peg.financial 热钱包余额不足",
+                BodyEncoding = Encoding.UTF8,
+                Body = message,
+                IsBodyHtml = true
+            })
+            {
+                mail.To.Add(to);
+                using SmtpClient smtp = new SmtpClient(config["Host"].ToString(), (int)config["Port"])
+                {
+                    EnableSsl = true,
+                    UseDefaultCredentials = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Credentials = new System.Net.NetworkCredential(config["EmailUserName"].ToString(), config["EmailPassword"].ToString())
+                };
+                smtp.Send(mail);
             }
         }
 

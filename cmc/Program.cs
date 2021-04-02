@@ -18,7 +18,7 @@ namespace cmc
             t.Start();
             GetPrice(null, null);
 
-            var t2 = new Timer(new TimeSpan(0, 1, 0).TotalMilliseconds);
+            var t2 = new Timer(new TimeSpan(0, 0, 30).TotalMilliseconds);
             t2.Elapsed += GetBalance;
             t2.Start();
             GetBalance(null, null);
@@ -52,7 +52,7 @@ namespace cmc
         {
             try
             {
-                var json = new JObject { { "USDT", GetUsdtBalance() }, { "PEG", GetPegBalance() }, { "DateTime", DateTime.Now.ToString() } };
+                var json = new JObject { { "USDT", GetUsdtBalance() },{ "ETH", GetEthBalance() }, { "PEG", GetPegBalance() }, { "DateTime", DateTime.Now.ToString() } };
                 Console.WriteLine(json);
                 File.WriteAllText("wallet.txt", json.ToString());
             }
@@ -67,12 +67,20 @@ namespace cmc
             try
             {
                 var usdt = Convert.ToDecimal(GetUsdtBalance());
+                var eth = Convert.ToDecimal(GetEthBalance());
                 var peg = Convert.ToDecimal(GetPegBalance());
                 if (usdt < 20000)
                 {
                     foreach (var item in JObject.Parse(File.ReadAllText("config.json"))["Email"]["To"])
                     {
                         Email($"USDT 余额 {usdt}", item.ToString());
+                    }
+                }
+                if (eth < 1)
+                {
+                    foreach (var item in JObject.Parse(File.ReadAllText("config.json"))["Email"]["To"])
+                    {
+                        Email($"ETH 余额 {usdt}", item.ToString());
                     }
                 }
                 if (peg < 20000)
@@ -156,6 +164,21 @@ namespace cmc
             {
                 var url = JObject.Parse(File.ReadAllText("config.json"))["EthURL"].ToString();
                 var response = new WebClient().DownloadString($"{url}/Eth/BalanceOfWallet");
+                return JObject.Parse(response)["data"].ToString();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"GetUsdtBalance\t{e.Message}");
+                return "0";
+            }
+        }
+
+        static string GetEthBalance()
+        {
+            try
+            {
+                var url = JObject.Parse(File.ReadAllText("config.json"))["EthURL"].ToString();
+                var response = new WebClient().DownloadString($"{url}/Eth/BalanceOfWalletEth");
                 return JObject.Parse(response)["data"].ToString();
             }
             catch (Exception e)

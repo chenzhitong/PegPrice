@@ -26,7 +26,6 @@ namespace cmc
             var t3 = new Timer(new TimeSpan(24, 0, 0).TotalMilliseconds);
             t3.Elapsed += SendEmail;
             t3.Start();
-            SendEmail(null, null);
 
             Console.ReadLine();
         }
@@ -52,7 +51,9 @@ namespace cmc
         {
             try
             {
-                var json = new JObject { { "USDT", GetUsdtBalance() },{ "ETH", GetEthBalance() }, { "PEG", GetPegBalance() }, { "DateTime", DateTime.Now.ToString() } };
+                //var json = new JObject { { "USDT", GetUsdtBalance() },{ "ETH", GetEthBalance() }, { "PEG", GetPegBalance() }, { "DateTime", DateTime.Now.ToString() } };
+                var json = new JObject { { "USDT", 0 }, { "ETH", 0 }, { "PEG", GetPegBalance() }, { "DateTime", DateTime.Now.ToString() } };
+
                 Console.WriteLine(json);
                 File.WriteAllText("wallet.txt", json.ToString());
             }
@@ -148,8 +149,10 @@ namespace cmc
             try
             {
                 var url = JObject.Parse(File.ReadAllText("config.json"))["NeoURL"].ToString();
-                var response = PostWebRequest2($"{url}", "{\"jsonrpc\": \"2.0\",\"method\": \"getPegBalance\",\"params\": [],\"id\": 1}");
-                return JObject.Parse(response)["result"]["data"]["balance"].ToString();
+                var address = JObject.Parse(File.ReadAllText("config.json"))["address"].ToString();
+                var contract = JObject.Parse(File.ReadAllText("config.json"))["contract"].ToString();
+                var response = PostWebRequest2($"{url}", $"{{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"invokefunction\",\"params\":[\"{contract}\",\"balanceOf\",[{{\"type\":\"Hash160\",\"value\":\"{address}\"}}]]}}");
+                return (long.Parse(JObject.Parse(response)["result"]["stack"][0]["value"].ToString()) / 100000000.0).ToString();
             }
             catch (Exception e)
             {
